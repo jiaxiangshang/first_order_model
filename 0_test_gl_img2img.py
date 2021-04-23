@@ -137,15 +137,15 @@ def test_video(opt, path_src, list_path_tar):
     for i in range(len(list_path_tar)):
         path_tar = list_path_tar[i]
 
-        path_src_pure, _ = os.path.splitext(path_tar)
-        path_src_bbox = path_src_pure + '_bbox.txt'
-        src_bbox = parse_self_facebbox(path_src_bbox)[:-1]
+        path_tar_pure, _ = os.path.splitext(path_tar)
+        path_tar_bbox = path_tar_pure + '_bbox.txt'
+        tar_bbox = parse_self_facebbox(path_tar_bbox)[:-1]
 
-        source_image_ori = imageio.imread(path_tar)
-        source_image, m_inv = crop_bbox(source_image_ori, src_bbox)
+        tar_image_ori = imageio.imread(path_tar)
+        tar_image, m_inv = crop_bbox(tar_image_ori, tar_bbox)
 
-        driving_video_ori.append(source_image_ori)
-        driving_video.append(source_image)
+        driving_video_ori.append(tar_image_ori)
+        driving_video.append(tar_image)
         list_m_inv.append(m_inv)
 
     #source_image_ori = resize(source_image_ori, (256, 256))[..., :3]
@@ -175,7 +175,7 @@ def test_video(opt, path_src, list_path_tar):
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("--config", required=True, help="path to config")
+    parser.add_argument("--config", default='config/vox-256.yaml', help="path to config")
     parser.add_argument("--checkpoint", default='/data0/2_Project/python/deeplearning_python/dl_model_reen/vox-cpk.pth.tar', help="path to checkpoint to restore")
 
     parser.add_argument("--source_image", default='sup-mat/source.png', help="path to source image")
@@ -199,7 +199,8 @@ if __name__ == "__main__":
 
     parser.add_argument('--name_global_list', default='train_video_10', type=str, help='')
 
-    parser.add_argument('--num_src_k', default=3, type=int, help='')
+    parser.add_argument('--num_src_k', default=1, type=int, help='')
+    parser.add_argument('--num_tar_k', default=10, type=int, help='')
 
     parser.set_defaults(relative=False)
     parser.set_defaults(adapt_scale=False)
@@ -222,17 +223,21 @@ if __name__ == "__main__":
         name_vk = list_name_videoKey[i]
         list_frames = dict_video_2_frames[name_vk]
 
-        for j in range(0, len(list_frames), int(len(list_frames)/opt.num_src_k)):
+        step = int(len(list_frames)/opt.num_src_k)
+        for j in range(0, len(list_frames), step):
             main_frame = list_frames[j]
 
             for i_v in range(len(list_name_videoKey)):
+                if i_v % opt.num_tar_k != 0:
+                    continue
                 name_vk_SEAR = list_name_videoKey[i_v]
                 list_frames_SEAR = dict_video_2_frames[name_vk_SEAR]
                 list_path_SEAR = [lf+'.jpg' for lf in list_frames_SEAR]
                 source_image, list_driving_video, list_result, list_m_inv = test_video(opt, main_frame + '.jpg', list_path_SEAR)
 
-                name_subfolder_save = 'reen_%d_%s_numf_%d_on_%s' % (i, name_vk, j, name_vk_SEAR)
-                dic_subf_save = os.path.join(opt.dic_save, name_subfolder_save)
+                name_subfolder_save_0 = 'reen_%d' % (i)
+                name_subfolder_save = 'numf_%d_on_%d' % (j, i_v)
+                dic_subf_save = os.path.join(opt.dic_save, name_subfolder_save_0+'/'+name_subfolder_save)
                 print('save subdic', dic_subf_save)
                 if os.path.isdir(dic_subf_save) == False:
                     os.makedirs(dic_subf_save)
