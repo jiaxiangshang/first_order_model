@@ -162,7 +162,7 @@ def crop_bbox(image, tube_bbox, image_shape=[256, 256], increase_area=0.1):
     scale_sq_y = h / image_shape[1]
     M_inv = np.float32([[scale_sq_x, 0, left], [0, scale_sq_y, top]])
 
-    return img_new, M_inv
+    return img_new, M_inv, [left, top, right, bot, 1.0]
 
 """
 
